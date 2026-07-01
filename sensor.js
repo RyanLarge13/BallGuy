@@ -32,4 +32,11 @@ export class Sensor {
     ctx.fill();
     ctx.closePath();
   }
+
+  triggerNeurons() {
+    for (let i = 0; i < this.neurons.length; i++) {
+      const neuron = this.neurons[i];
+      neuron.currentIntensity = this.intensity;
+    }
+  }
 }

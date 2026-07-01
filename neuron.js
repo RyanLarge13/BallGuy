@@ -1,15 +1,15 @@
 export class Neuron {
   constructor(connections = [], sensors = []) {
-    this.connectons = this.connectons;
+    this.connections = this.connections;
     this.previousConnections = this.previousConnections;
     this.activeHistory = this.activeHistory;
     this.currentIntensity = this.currentIntensity;
     this.sensors = this.sensors;
     this.coolDownTime = this.coolDownTime;
 
-    // Asssign params
+    // Assign params
     this.sensors = sensors;
-    this.connectons = connections;
+    this.connections = connections;
 
     // Initialize
     this.init();

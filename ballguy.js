@@ -86,14 +86,21 @@ export class BallGuy {
       const sensorPos = sensor.position;
       const radius = sensor.radius;
 
-      const withinX = Math.abs(sensorPos.x - pos.x) <= radius * 4;
-      const withinY = Math.abs(sensorPos.y - pos.y) <= radius * 4;
+      const withinX = Math.abs(sensorPos.x - pos.x);
+      const withinY = Math.abs(sensorPos.y - pos.y);
 
-      if (withinX && withinY) {
-        sensor.fillColor = "#FF0000";
-      } else {
-        sensor.fillColor = "#00FF00";
+      const intensity = Math.min((withinX + withinY) / 10, 10);
+
+      sensor.intensity = intensity;
+
+      if (intensity <= 10) {
+        sensor.triggerNeurons();
       }
+
+      const red = Math.round(255 * (1 - intensity / 10));
+      const green = Math.round(255 * (intensity / 10));
+
+      sensor.fillColor = `rgb(${red}, ${green}, 0)`;
     }
   }
 }
