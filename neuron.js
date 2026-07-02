@@ -36,15 +36,16 @@ export class Neuron {
       // If the intensity of this neuron has gone up to a new peak before the cool down has completed. Update it.
       if (this.lastActivity.peak < this.currentIntensity) {
         this.lastActivity = {
-          peak: this.currentIntensity - 10 + this.currentIntensity,
+          ...this.lastActivity,
+          peak: this.currentIntensity - 10 + this.currentIntensity, // turning value into percentage,
         };
       }
 
       // Add a multiplier to decrease the amount of time for cool down
       this.currentIntensity = timePassedInSeconds * 5;
+
       this.coolDownInterval = setInterval(() => {
         this.startCoolDown();
-
         // Increase or decrease to change animation timing
       }, 100);
       return;

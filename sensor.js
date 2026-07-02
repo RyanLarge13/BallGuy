@@ -55,7 +55,7 @@ export class Sensor {
       const childX = x + Math.cos(childAngle) * distance;
       const childY = y + Math.sin(childAngle) * distance;
 
-      const neuron = this.neurons[i];
+      const neuron = this.neurons[i].neuron;
 
       const red = Math.round(255 * (1 - neuron.currentIntensity / 10));
       const green = Math.round(255 * (neuron.currentIntensity / 10));
@@ -80,21 +80,23 @@ export class Sensor {
 
   triggerNeurons() {
     for (let i = 0; i < this.neurons.length; i++) {
-      const neuron = this.neurons[i];
+      const neuron = this.neurons[i].neuron;
 
       // Set an initial neuron trigger time
       if (neuron.currentIntensity >= 10) {
         neuron.initialTriggerTime = new Date().getTime();
       }
 
-      // Remember this is being triggered fast as hell. So even divided by ten the neuron will reach peak intensity quickly
+      // Slowly build neuron activation logrithmically based on sensor intensity
+      const speed = 0.01 + Math.log2(this.intensity + 1) * 0.05;
+      neuron.currentIntensity -= speed;
       neuron.lastTriggerTime = new Date().getTime();
     }
   }
 
   coolDownNeurons() {
     for (let i = 0; i < this.neurons.length; i++) {
-      const neuron = this.neurons[i];
+      const neuron = this.neurons[i].neuron;
       neuron.startCoolDown();
     }
   }

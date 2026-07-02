@@ -70,8 +70,12 @@ export class BallGuy {
       if (i === 2 || i === 6) {
         // Connect the only two neurons to first sensors initially
         const neuronConnection = this.neurons[i === 2 ? 0 : 1];
-        neuronConnection.sensors.push(newSensor);
-        newSensor.neurons.push(neuronConnection);
+
+        const connectionData = { neuron: neuronConnection, strenth: 10 };
+        const sensorConnectionData = { sensor: newSensor, strength: 10 };
+
+        neuronConnection.sensors.push(sensorConnectionData);
+        newSensor.neurons.push(connectionData);
       }
       sensors.push(newSensor);
     }
