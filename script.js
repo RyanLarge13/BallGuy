@@ -10,7 +10,7 @@ const loadSim = () => {
   canvas.width = winWidth;
   canvas.height = winHeight;
 
-  ballGuy = new BallGuy({ x: 100, y: 100 }, ctx);
+  ballGuy = new BallGuy({ x: winWidth / 2 - 50, y: winHeight / 2 - 50 }, ctx);
 
   paint(ctx);
 };

@@ -19,7 +19,7 @@ export class BallGuy {
   }
 
   init() {
-    this.neurons = this.initializNeurons();
+    this.neurons = this.initializeNeurons();
     this.sensors = this.initializeSensors();
   }
 
@@ -32,7 +32,7 @@ export class BallGuy {
       Math.PI * 2,
       false,
     );
-    this.ctx.fillStyle = "#000000";
+    this.ctx.fillStyle = "#c40dbb";
     this.ctx.fill();
     this.ctx.closePath();
 
@@ -51,7 +51,7 @@ export class BallGuy {
     }
   }
 
-  initializNeurons() {
+  initializeNeurons() {
     const neurons = [];
 
     for (let i = 0; i < 2; i++) {
@@ -67,9 +67,9 @@ export class BallGuy {
 
     for (let i = 0; i < 10; i++) {
       const newSensor = new Sensor();
-      if (i < 2) {
+      if (i === 2 || i === 6) {
         // Connect the only two neurons to first sensors initially
-        const neuronConnection = this.neurons[i];
+        const neuronConnection = this.neurons[i === 2 ? 0 : 1];
         neuronConnection.sensors.push(newSensor);
         newSensor.neurons.push(neuronConnection);
       }
@@ -93,9 +93,15 @@ export class BallGuy {
 
       sensor.intensity = intensity;
 
-      if (intensity <= 10) {
+      if (intensity < 10 && sensor.previousIntensity > intensity) {
         sensor.triggerNeurons();
       }
+
+      if (sensor.previousIntensity < intensity) {
+        sensor.coolDownNeurons();
+      }
+
+      sensor.previousIntensity = intensity;
 
       const red = Math.round(255 * (1 - intensity / 10));
       const green = Math.round(255 * (intensity / 10));
