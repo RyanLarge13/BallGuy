@@ -81,16 +81,21 @@ export class Sensor {
   triggerNeurons() {
     for (let i = 0; i < this.neurons.length; i++) {
       const neuron = this.neurons[i].neuron;
+      const connectionStrength = this.neurons[i].strength;
 
       // Set an initial neuron trigger time
       if (neuron.currentIntensity >= 10) {
         neuron.initialTriggerTime = new Date().getTime();
       }
 
-      // Slowly build neuron activation logrithmically based on sensor intensity
-      const speed = 0.01 + Math.log2(this.intensity + 1) * 0.05;
-      neuron.currentIntensity -= speed;
-      neuron.lastTriggerTime = new Date().getTime();
+      // Slowly build neuron activation logarithmically based on sensor intensity
+      // const speed = 0.0001 + Math.log2(this.intensity + 1) * 0.08;
+      const speed = 0.05 * Math.max(1, connectionStrength);
+
+      if (neuron.currentIntensity > 0 && neuron.currentIntensity - speed > 0) {
+        neuron.currentIntensity -= speed;
+        neuron.lastTriggerTime = new Date().getTime();
+      }
     }
   }
 

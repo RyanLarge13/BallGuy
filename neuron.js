@@ -6,7 +6,6 @@ export class Neuron {
     this.currentIntensity = this.currentIntensity;
     this.sensors = this.sensors;
     this.lastTriggerTime = this.lastTriggerTime;
-    this.coolDownInterval = this.coolDownInterval;
     this.lastActivity = this.lastActivity;
     this.initialTriggerTime = this.initialTriggerTime;
 
@@ -27,7 +26,6 @@ export class Neuron {
   }
 
   startCoolDown() {
-    clearInterval(this.coolDownInterval);
     const timePassedInSeconds =
       (new Date().getTime() - this.lastTriggerTime) / 1000;
 
@@ -42,12 +40,14 @@ export class Neuron {
       }
 
       // Add a multiplier to decrease the amount of time for cool down
-      this.currentIntensity = timePassedInSeconds * 5;
+      const speed = 0.005;
 
-      this.coolDownInterval = setInterval(() => {
-        this.startCoolDown();
-        // Increase or decrease to change animation timing
-      }, 100);
+      if (this.currentIntensity < 10) {
+        this.currentIntensity += speed;
+        setTimeout(() => {
+          this.startCoolDown();
+        }, 250);
+      }
       return;
     }
 
@@ -55,5 +55,9 @@ export class Neuron {
       peak: this.lastActivity.peak,
       duration: new Date().getTime() - this.initialTriggerTime,
     };
+
+    this.calculateConnectionStrength();
   }
+
+  calculateConnectionStrength() {}
 }

@@ -71,8 +71,8 @@ export class BallGuy {
         // Connect the only two neurons to first sensors initially
         const neuronConnection = this.neurons[i === 2 ? 0 : 1];
 
-        const connectionData = { neuron: neuronConnection, strenth: 10 };
-        const sensorConnectionData = { sensor: newSensor, strength: 10 };
+        const connectionData = { neuron: neuronConnection, strength: 1 };
+        const sensorConnectionData = { sensor: newSensor, strength: 1 };
 
         neuronConnection.sensors.push(sensorConnectionData);
         newSensor.neurons.push(connectionData);
@@ -99,11 +99,12 @@ export class BallGuy {
 
       if (intensity < 10 && sensor.previousIntensity > intensity) {
         sensor.triggerNeurons();
-      }
-
-      if (sensor.previousIntensity < intensity) {
+      } else {
         sensor.coolDownNeurons();
       }
+
+      // if (sensor.previousIntensity < intensity) {
+      // }
 
       sensor.previousIntensity = intensity;
 
