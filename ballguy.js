@@ -6,6 +6,8 @@ export class BallGuy {
     this.position = this.position;
     this.sensors = this.sensors;
     this.neurons = this.neurons;
+    this.neuronToSensorConnectionPotentials =
+      this.neuronToSensorConnectionPotentials;
     this.radius = this.radius;
     this.ctx = this.ctx;
 
@@ -21,6 +23,7 @@ export class BallGuy {
   init() {
     this.neurons = this.initializeNeurons();
     this.sensors = this.initializeSensors();
+    this.neuronToSensorConnectionPotentials = [];
   }
 
   draw() {
@@ -71,8 +74,16 @@ export class BallGuy {
         // Connect the only two neurons to first sensors initially
         const neuronConnection = this.neurons[i === 2 ? 0 : 1];
 
-        const connectionData = { neuron: neuronConnection, strength: 1 };
-        const sensorConnectionData = { sensor: newSensor, strength: 1 };
+        const connectionData = {
+          id: crypto.randomUUID(),
+          neuron: neuronConnection,
+          strength: 1,
+        };
+        const sensorConnectionData = {
+          id: crypto.randomUUID(),
+          sensor: newSensor,
+          strength: 1,
+        };
 
         neuronConnection.sensors.push(sensorConnectionData);
         newSensor.neurons.push(connectionData);
@@ -112,6 +123,93 @@ export class BallGuy {
       const green = Math.round(255 * (intensity / 10));
 
       sensor.fillColor = `rgb(${red}, ${green}, 0)`;
+    }
+  }
+
+  checkConnectionStrength() {
+    for (let i = 0; i < this.sensors.length; i++) {
+      const sensor = this.sensors[i];
+
+      for (let j = 0; j < sensor.neurons.length; j++) {
+        const { id, neuron, strength } = sensor.neurons[j];
+
+        const neuronFiringHistory = neuron.activeHistory;
+
+        if (neuronFiringHistory.length >= 3) {
+          const peaks = [];
+          const durations = [];
+
+          for (let k = 0; k < neuronFiringHistory.length; k++) {
+            peaks.push(neuronFiringHistory[k].peak);
+            durations.push(neuronFiringHistory[k].duration);
+          }
+
+          const peakAve = peaks.reduce((a, b) => a + b) / peaks.length;
+
+          const peakPercentage = peakAve - 10;
+          const durationAverage =
+            durations.reduce((a, b) => a + b) / durations.length;
+
+          if (peakAve > strength && strength < 10) {
+            sensor.neurons[j].strength +=
+              1 * (peakAve / 100) * (durationAverage / 100);
+            sensor.neurons[j].neuron.activeHistory = [];
+          }
+
+          if (strength >= 10) {
+            this.checkPotentials(sensor.neurons[j].neuron, id);
+          }
+
+          console.log(strength);
+        }
+      }
+    }
+  }
+
+  checkPotentials(neuron, skipId) {
+    const newPotential = { skipId: skipId, neuron: neuron, times: 1 };
+    const potentialExists = this.neuronToSensorConnectionPotentials.find(
+      (p) => p.skipId === skipId,
+    );
+
+    if (!potentialExists) {
+      this.neuronToSensorConnectionPotentials.push(newPotential);
+    } else {
+      if (potentialExists.times > 2) {
+        this.neuronToSensorConnectionPotentials =
+          this.neuronToSensorConnectionPotentials.filter(
+            (p) => p.skipId !== skipId,
+          );
+        let newSensorToConnect = null;
+
+        for (let i = 0; i < this.sensors.length; i++) {
+          let hasConnection = false;
+          if (this.sensors[i].neurons.length > 0) {
+            hasConnection = true;
+          }
+
+          if (!hasConnection) {
+            newSensorToConnect = this.sensors[i];
+            break;
+          }
+        }
+
+        if (newSensorToConnect !== null) {
+          potentialExists.neuron.sensors.push({
+            id: crypto.randomUUID(),
+            sensor: newSensorToConnect,
+            strength: 1,
+          });
+
+          newSensorToConnect.neurons.push({
+            id: crypto.randomUUID(),
+            neuron: potentialExists.neuron,
+            strength: 1,
+          });
+          return;
+        }
+      }
+      potentialExists.times += 1;
     }
   }
 }

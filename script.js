@@ -13,6 +13,12 @@ const loadSim = () => {
   ballGuy = new BallGuy({ x: winWidth / 2 - 50, y: winHeight / 2 - 50 }, ctx);
 
   paint(ctx);
+
+  setTimeout(() => {
+    setInterval(() => {
+      ballGuy.checkConnectionStrength();
+    }, 5000);
+  }, 2000);
 };
 
 const paint = (ctx) => {

@@ -51,10 +51,14 @@ export class Neuron {
       return;
     }
 
-    this.activeHistory = {
+    const latestHistory = {
       peak: this.lastActivity.peak,
       duration: new Date().getTime() - this.initialTriggerTime,
     };
+
+    const newHistory = [latestHistory, ...this.activeHistory].splice(0, 3);
+
+    this.activeHistory = newHistory;
 
     this.calculateConnectionStrength();
   }
