@@ -1,5 +1,6 @@
 export class Neuron {
-  constructor(connections = [], sensors = []) {
+  constructor(id, connections = [], sensors = []) {
+    this.id = this.id;
     this.connections = this.connections;
     this.previousConnections = this.previousConnections;
     this.activeHistory = this.activeHistory;
@@ -8,6 +9,7 @@ export class Neuron {
     this.lastTriggerTime = this.lastTriggerTime;
     this.lastActivity = this.lastActivity;
     this.initialTriggerTime = this.initialTriggerTime;
+    this.coolingDown = this.coolingDown;
 
     // Assign params
     this.sensors = sensors;
@@ -18,6 +20,8 @@ export class Neuron {
   }
 
   init() {
+    this.id = this.id;
+    this.coolingDown = false;
     this.previousConnections = [];
     this.activeHistory = [];
     this.currentIntensity = 10;
@@ -26,24 +30,25 @@ export class Neuron {
   }
 
   startCoolDown() {
+    this.coolingDown = true;
     const timePassedInSeconds =
       (new Date().getTime() - this.lastTriggerTime) / 1000;
 
-    // Decrease or increase both timePassedInSeconds and currentIntensity for faster cool down times
-    if (timePassedInSeconds < 2) {
-      // If the intensity of this neuron has gone up to a new peak before the cool down has completed. Update it.
-      if (this.lastActivity.peak < this.currentIntensity) {
-        this.lastActivity = {
-          ...this.lastActivity,
-          peak: this.currentIntensity - 10 + this.currentIntensity, // turning value into percentage,
-        };
-      }
+    // If the intensity of this neuron has gone up to a new peak before the cool down has completed. Update it.
+    if (this.lastActivity.peak < this.currentIntensity) {
+      this.lastActivity = {
+        ...this.lastActivity,
+        peak: this.currentIntensity - 10 + this.currentIntensity, // turning value into percentage,
+      };
+    }
 
-      // Add a multiplier to decrease the amount of time for cool down
-      const speed = 0.005;
+    // Maybe add a multiplyer to make cool down dependant on connection strength
 
-      if (this.currentIntensity < 10) {
-        this.currentIntensity += speed;
+    if (this.currentIntensity < 10) {
+      const speed = 0.1;
+      this.currentIntensity = Math.min(10, this.currentIntensity + speed);
+
+      if (this.coolingDown === true) {
         setTimeout(() => {
           this.startCoolDown();
         }, 250);
@@ -59,9 +64,5 @@ export class Neuron {
     const newHistory = [latestHistory, ...this.activeHistory].splice(0, 3);
 
     this.activeHistory = newHistory;
-
-    this.calculateConnectionStrength();
   }
-
-  calculateConnectionStrength() {}
 }

@@ -57,8 +57,10 @@ export class BallGuy {
   initializeNeurons() {
     const neurons = [];
 
+    const nueronId = crypto.randomUUID();
+
     for (let i = 0; i < 2; i++) {
-      const newNeuron = new Neuron([], []);
+      const newNeuron = new Neuron(nueronId, [], []);
       neurons.push(newNeuron);
     }
 
@@ -69,18 +71,18 @@ export class BallGuy {
     const sensors = [];
 
     for (let i = 0; i < 10; i++) {
-      const newSensor = new Sensor();
+      const sensorId = crypto.randomUUID();
+      const newSensor = new Sensor(sensorId);
+
       if (i === 2 || i === 6) {
         // Connect the only two neurons to first sensors initially
         const neuronConnection = this.neurons[i === 2 ? 0 : 1];
 
         const connectionData = {
-          id: crypto.randomUUID(),
           neuron: neuronConnection,
           strength: 1,
         };
         const sensorConnectionData = {
-          id: crypto.randomUUID(),
           sensor: newSensor,
           strength: 1,
         };
@@ -98,26 +100,43 @@ export class BallGuy {
   checkSensors(pos) {
     for (let i = 0; i < this.sensors.length; i++) {
       const sensor = this.sensors[i];
-      const sensorPos = sensor.position;
-      const radius = sensor.radius;
 
-      const withinX = Math.abs(sensorPos.x - pos.x);
-      const withinY = Math.abs(sensorPos.y - pos.y);
+      const dx = pos.x - sensor.position.x;
+      const dy = pos.y - sensor.position.y;
 
-      const intensity = Math.min((withinX + withinY) / 10, 10);
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      // how far the sensor can "feel" the mouse
+      const range = sensor.radius * 4;
+
+      // 0 = strongest, 10 = weakest
+      const intensity = Math.max(0, Math.min((distance / range) * 10, 10));
+
+      const gettingCloser =
+        sensor.previousDistance === undefined
+          ? false
+          : distance < sensor.previousDistance;
+
+      const inRange = intensity < 10;
+      const touching = distance <= sensor.radius;
+      const standingStill =
+        sensor.previousDistance !== undefined &&
+        Math.abs(distance - sensor.previousDistance) < 0.5;
 
       sensor.intensity = intensity;
 
-      if (intensity < 10 && sensor.previousIntensity > intensity) {
+      if (
+        touching ||
+        (inRange && gettingCloser) ||
+        (inRange && standingStill)
+      ) {
         sensor.triggerNeurons();
       } else {
         sensor.coolDownNeurons();
       }
 
-      // if (sensor.previousIntensity < intensity) {
-      // }
-
       sensor.previousIntensity = intensity;
+      sensor.previousDistance = distance;
 
       const red = Math.round(255 * (1 - intensity / 10));
       const green = Math.round(255 * (intensity / 10));
@@ -131,85 +150,90 @@ export class BallGuy {
       const sensor = this.sensors[i];
 
       for (let j = 0; j < sensor.neurons.length; j++) {
-        const { id, neuron, strength } = sensor.neurons[j];
+        const { neuron, strength } = sensor.neurons[j];
 
         const neuronFiringHistory = neuron.activeHistory;
 
         if (neuronFiringHistory.length >= 3) {
-          const peaks = [];
-          const durations = [];
-
-          for (let k = 0; k < neuronFiringHistory.length; k++) {
-            peaks.push(neuronFiringHistory[k].peak);
-            durations.push(neuronFiringHistory[k].duration);
-          }
-
-          const peakAve = peaks.reduce((a, b) => a + b) / peaks.length;
-
-          const peakPercentage = peakAve - 10;
-          const durationAverage =
-            durations.reduce((a, b) => a + b) / durations.length;
+          const { peakAve, durationAve } =
+            this.getPeakAndDurationAverages(neuronFiringHistory);
 
           if (peakAve > strength && strength < 10) {
             sensor.neurons[j].strength +=
-              1 * (peakAve / 100) * (durationAverage / 100);
+              1 * (peakAve / 100) * (durationAve / 100);
             sensor.neurons[j].neuron.activeHistory = [];
           }
 
-          if (strength >= 10) {
-            this.checkPotentials(sensor.neurons[j].neuron, id);
+          if (sensor.neurons[j].strength >= 10) {
+            this.checkPotentials(sensor.neurons[j].neuron);
           }
-
-          console.log(strength);
         }
       }
     }
   }
 
-  checkPotentials(neuron, skipId) {
-    const newPotential = { skipId: skipId, neuron: neuron, times: 1 };
+  getPeakAndDurationAverages(neuronFiringHistory) {
+    const peaks = [];
+    const durations = [];
+
+    // Loop for average calculations
+    for (let i = 0; i < neuronFiringHistory.length; i++) {
+      peaks.push(neuronFiringHistory[i].peak);
+      durations.push(neuronFiringHistory[i].duration);
+    }
+
+    const peakAve = peaks.reduce((a, b) => a + b) / peaks.length;
+    const durationAve = durations.reduce((a, b) => a + b) / durations.length;
+
+    return { peakAve, durationAve };
+  }
+
+  checkPotentials(neuron) {
+    const newPotential = { neuron: neuron, times: 1 };
     const potentialExists = this.neuronToSensorConnectionPotentials.find(
-      (p) => p.skipId === skipId,
+      (p) => p.neuron.id === neuron.id,
     );
 
     if (!potentialExists) {
       this.neuronToSensorConnectionPotentials.push(newPotential);
-    } else {
-      if (potentialExists.times > 2) {
-        this.neuronToSensorConnectionPotentials =
-          this.neuronToSensorConnectionPotentials.filter(
-            (p) => p.skipId !== skipId,
-          );
-        let newSensorToConnect = null;
+      return;
+    }
 
-        for (let i = 0; i < this.sensors.length; i++) {
-          let hasConnection = false;
-          if (this.sensors[i].neurons.length > 0) {
-            hasConnection = true;
-          }
+    if (potentialExists.times > 2) {
+      // Remove potential as it will be used
+      this.neuronToSensorConnectionPotentials =
+        this.neuronToSensorConnectionPotentials.filter(
+          (p) => p.neuron.id !== neuron.id,
+        );
 
-          if (!hasConnection) {
-            newSensorToConnect = this.sensors[i];
-            break;
-          }
-        }
+      let newSensorToConnect = null;
 
-        if (newSensorToConnect !== null) {
-          potentialExists.neuron.sensors.push({
-            id: crypto.randomUUID(),
-            sensor: newSensorToConnect,
-            strength: 1,
-          });
+      for (let i = 0; i < this.sensors.length; i++) {
+        const hasConnection = this.sensors[i].neurons.some(
+          (n) => n.id === potentialExists.neuron.id,
+        );
 
-          newSensorToConnect.neurons.push({
-            id: crypto.randomUUID(),
-            neuron: potentialExists.neuron,
-            strength: 1,
-          });
-          return;
+        if (!hasConnection) {
+          newSensorToConnect = this.sensors[i];
+          break;
         }
       }
-      potentialExists.times += 1;
+
+      if (newSensorToConnect !== null) {
+        neuron.sensors.push({
+          sensor: newSensorToConnect,
+          strength: 1,
+        });
+
+        newSensorToConnect.neurons.push({
+          neuron: potentialExists.neuron,
+          strength: 1,
+        });
+        return;
+      }
     }
+
+    // Potential times is too low to create a new connection still
+    potentialExists.times += 1;
   }
 }

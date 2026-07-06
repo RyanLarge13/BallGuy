@@ -1,5 +1,6 @@
 export class Sensor {
-  constructor(type = "pressure") {
+  constructor(id, type = "pressure") {
+    this.id = this.id;
     this.previousIntensity = this.PreviousIntensity;
     this.intensity = this.intensity;
     this.neurons = this.neurons;
@@ -15,6 +16,7 @@ export class Sensor {
   }
 
   init() {
+    this.id = this.id;
     this.neurons = [];
     this.radius = 5;
     this.previousIntensity = 100;
@@ -81,6 +83,9 @@ export class Sensor {
   triggerNeurons() {
     for (let i = 0; i < this.neurons.length; i++) {
       const neuron = this.neurons[i].neuron;
+      // Make sure neuron knows it is not cooling down any more
+      neuron.coolingDown = false;
+
       const connectionStrength = this.neurons[i].strength;
 
       // Set an initial neuron trigger time
@@ -92,17 +97,18 @@ export class Sensor {
       // const speed = 0.0001 + Math.log2(this.intensity + 1) * 0.08;
       const speed = 0.05 * Math.max(1, connectionStrength);
 
-      if (neuron.currentIntensity > 0 && neuron.currentIntensity - speed > 0) {
-        neuron.currentIntensity -= speed;
-        neuron.lastTriggerTime = new Date().getTime();
-      }
+      // Can never fall below 0
+      neuron.currentIntensity = Math.max(0, neuron.currentIntensity - speed);
+      neuron.lastTriggerTime = new Date().getTime();
     }
   }
 
   coolDownNeurons() {
     for (let i = 0; i < this.neurons.length; i++) {
       const neuron = this.neurons[i].neuron;
-      neuron.startCoolDown();
+      if (neuron.coolingDown === false) {
+        neuron.startCoolDown();
+      }
     }
   }
 }
