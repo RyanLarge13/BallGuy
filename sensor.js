@@ -84,8 +84,6 @@ export class Sensor {
     for (let i = 0; i < this.neurons.length; i++) {
       const neuron = this.neurons[i].neuron;
       // Make sure neuron knows it is not cooling down any more
-      neuron.coolingDown = false;
-
       const connectionStrength = this.neurons[i].strength;
 
       // Set an initial neuron trigger time
@@ -106,9 +104,7 @@ export class Sensor {
   coolDownNeurons() {
     for (let i = 0; i < this.neurons.length; i++) {
       const neuron = this.neurons[i].neuron;
-      if (neuron.coolingDown === false) {
-        neuron.startCoolDown();
-      }
+      neuron.startCoolDown();
     }
   }
 }

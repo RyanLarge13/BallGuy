@@ -9,7 +9,6 @@ export class Neuron {
     this.lastTriggerTime = this.lastTriggerTime;
     this.lastActivity = this.lastActivity;
     this.initialTriggerTime = this.initialTriggerTime;
-    this.coolingDown = this.coolingDown;
 
     // Assign params
     this.sensors = sensors;
@@ -21,7 +20,6 @@ export class Neuron {
 
   init() {
     this.id = this.id;
-    this.coolingDown = false;
     this.previousConnections = [];
     this.activeHistory = [];
     this.currentIntensity = 10;
@@ -30,7 +28,6 @@ export class Neuron {
   }
 
   startCoolDown() {
-    this.coolingDown = true;
     const timePassedInSeconds =
       (new Date().getTime() - this.lastTriggerTime) / 1000;
 
@@ -42,27 +39,26 @@ export class Neuron {
       };
     }
 
-    // Maybe add a multiplyer to make cool down dependant on connection strength
+    // Maybe add a multiplier to make cool down dependant on connection strength
 
-    if (this.currentIntensity < 10) {
-      const speed = 0.1;
-      this.currentIntensity = Math.min(10, this.currentIntensity + speed);
+    if (this.currentIntensity >= 10) {
+      const latestHistory = {
+        peak: this.lastActivity.peak,
+        duration: new Date().getTime() - this.initialTriggerTime,
+      };
 
-      if (this.coolingDown === true) {
-        setTimeout(() => {
-          this.startCoolDown();
-        }, 250);
-      }
+      const newHistory = [latestHistory, ...this.activeHistory].splice(0, 3);
+
+      this.activeHistory = newHistory;
       return;
     }
 
-    const latestHistory = {
-      peak: this.lastActivity.peak,
-      duration: new Date().getTime() - this.initialTriggerTime,
-    };
-
-    const newHistory = [latestHistory, ...this.activeHistory].splice(0, 3);
-
-    this.activeHistory = newHistory;
+    if (this.currentIntensity < 10) {
+      const speed = 0.01;
+      this.currentIntensity = Math.min(10, this.currentIntensity + speed);
+      setTimeout(() => {
+        this.startCoolDown();
+      }, 100);
+    }
   }
 }

@@ -131,7 +131,8 @@ export class BallGuy {
         (inRange && standingStill)
       ) {
         sensor.triggerNeurons();
-      } else {
+      }
+      if (inRange && !gettingCloser && !standingStill && !touching) {
         sensor.coolDownNeurons();
       }
 
@@ -226,7 +227,7 @@ export class BallGuy {
         });
 
         newSensorToConnect.neurons.push({
-          neuron: potentialExists.neuron,
+          neuron: neuron,
           strength: 1,
         });
         return;
