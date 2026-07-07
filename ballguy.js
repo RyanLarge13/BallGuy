@@ -40,6 +40,7 @@ export class BallGuy {
     this.ctx.closePath();
 
     this.drawSensors();
+    this.drawNeurons();
   }
 
   drawSensors() {
@@ -54,13 +55,19 @@ export class BallGuy {
     }
   }
 
+  drawNeurons() {
+    for (let i = 0; i < this.neurons.length; i++) {
+      this.neurons[i].draw(this.ctx, this.position, this.radius);
+    }
+  }
+
   initializeNeurons() {
     const neurons = [];
 
-    const nueronId = crypto.randomUUID();
+    const neuronId = crypto.randomUUID();
 
     for (let i = 0; i < 2; i++) {
-      const newNeuron = new Neuron(nueronId, [], []);
+      const newNeuron = new Neuron(neuronId, [], []);
       neurons.push(newNeuron);
     }
 
@@ -211,8 +218,10 @@ export class BallGuy {
 
       for (let i = 0; i < this.sensors.length; i++) {
         const hasConnection = this.sensors[i].neurons.some(
-          (n) => n.id === potentialExists.neuron.id,
+          (n) => n.neuron.id === neuron.id,
         );
+
+        console.log(hasConnection);
 
         if (!hasConnection) {
           newSensorToConnect = this.sensors[i];
