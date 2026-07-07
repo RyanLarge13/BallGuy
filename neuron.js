@@ -131,14 +131,11 @@ export class Neuron {
   }
 
   startCoolDown() {
-    const timePassedInSeconds =
-      (new Date().getTime() - this.lastTriggerTime) / 1000;
-
     // If the intensity of this neuron has gone up to a new peak before the cool down has completed. Update it.
     if (this.lastActivity.peak < this.currentIntensity) {
       this.lastActivity = {
         ...this.lastActivity,
-        peak: this.currentIntensity - 10 + this.currentIntensity, // turning value into percentage,
+        peak: this.currentIntensity,
       };
     }
 
@@ -150,7 +147,7 @@ export class Neuron {
         duration: new Date().getTime() - this.initialTriggerTime,
       };
 
-      const newHistory = [latestHistory, ...this.activeHistory].splice(0, 3);
+      const newHistory = [latestHistory, ...this.activeHistory];
 
       this.activeHistory = newHistory;
       return;

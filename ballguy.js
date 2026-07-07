@@ -64,9 +64,8 @@ export class BallGuy {
   initializeNeurons() {
     const neurons = [];
 
-    const neuronId = crypto.randomUUID();
-
     for (let i = 0; i < 2; i++) {
+      const neuronId = crypto.randomUUID();
       const newNeuron = new Neuron(neuronId, [], []);
       neurons.push(newNeuron);
     }
@@ -167,12 +166,29 @@ export class BallGuy {
             this.getPeakAndDurationAverages(neuronFiringHistory);
 
           if (peakAve > strength && strength < 10) {
-            sensor.neurons[j].strength +=
-              1 * (peakAve / 100) * (durationAve / 100);
+            // Also find the neuron to sensor connection for strength update
+            const sensorConnection = neuron.sensors.find(
+              (s) => s.sensor.id === this.sensors[i].id,
+            );
+
+            if (!sensorConnection) {
+              throw new Error(
+                "Sensor connection should also exist for strength update",
+              );
+            }
+
+            const newStrength = Math.min(
+              10,
+              sensor.neurons[j].strength +
+                1 * (peakAve / 100) * (durationAve / 1000),
+            );
+
+            sensorConnection.strength = newStrength;
+            sensor.neurons[j].strength = newStrength;
             sensor.neurons[j].neuron.activeHistory = [];
           }
 
-          if (sensor.neurons[j].strength >= 10) {
+          if (strength >= 10) {
             this.checkPotentials(sensor.neurons[j].neuron);
           }
         }
@@ -190,6 +206,7 @@ export class BallGuy {
       durations.push(neuronFiringHistory[i].duration);
     }
 
+    console.log(peaks);
     const peakAve = peaks.reduce((a, b) => a + b) / peaks.length;
     const durationAve = durations.reduce((a, b) => a + b) / durations.length;
 
@@ -197,6 +214,17 @@ export class BallGuy {
   }
 
   checkPotentials(neuron) {
+    // Change to decrease the amount of times a new connection is created.
+    // Multiplier is used to cool down the number of connections made when many sensors are connected to a neuron
+    // causing excess potentials
+    const necessaryPotentialTimes = 3 * neuron.sensors.length;
+
+    // If not every sensor connected to neuron has a full strength connection
+    // then cancel the potential
+    if (!neuron.sensors.every((s) => s.strength >= 10)) {
+      return;
+    }
+
     const newPotential = { neuron: neuron, times: 1 };
     const potentialExists = this.neuronToSensorConnectionPotentials.find(
       (p) => p.neuron.id === neuron.id,
@@ -207,8 +235,8 @@ export class BallGuy {
       return;
     }
 
-    if (potentialExists.times > 2) {
-      // Remove potential as it will be used
+    if (potentialExists.times >= necessaryPotentialTimes) {
+      // Remove potential as it will be used and needs deletion
       this.neuronToSensorConnectionPotentials =
         this.neuronToSensorConnectionPotentials.filter(
           (p) => p.neuron.id !== neuron.id,
@@ -220,8 +248,6 @@ export class BallGuy {
         const hasConnection = this.sensors[i].neurons.some(
           (n) => n.neuron.id === neuron.id,
         );
-
-        console.log(hasConnection);
 
         if (!hasConnection) {
           newSensorToConnect = this.sensors[i];
